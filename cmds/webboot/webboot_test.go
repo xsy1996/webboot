@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -114,5 +115,37 @@ func TestISOOption(t *testing.T) {
 
 	if _, err := os.Stat(iso.path); err != nil {
 		t.Errorf("Fail to find the iso file, error msg: %+v", err)
+	}
+}
+
+// This test may not work for every one.
+// because the test need a usb stick that contains a /Image folder
+// which structure is
+// +-- Image
+// |  +-- tinycore1
+// |  |  +-- TinyCorePure64.iso
+// |  |  +-- TinyCorePure64 (copy).iso
+// |  +-- tinycore2
+// |     +-- TinyCorePure64-10.1.iso
+// |     +-- TinyCorePure64-10.1 (copy).iso
+// ...
+func TestGetCachedDirectory(t *testing.T) {
+	mp, err := getCachedDirectory()
+	if err != nil {
+		t.Fatalf("Fail to find the USB stick: %+v", err)
+	}
+	if mp == nil {
+		t.Fatalf("Do not find the cache directory")
+	}
+	checklist := []string{
+		filepath.Join(mp.Path, "/Image/tinycore1/TinyCorePure64.iso"),
+		filepath.Join(mp.Path, "/Image/tinycore1/TinyCorePure64 (copy).iso"),
+		filepath.Join(mp.Path, "/Image/tinycore2/TinyCorePure64-10.1.iso"),
+		filepath.Join(mp.Path, "/Image/tinycore2/TinyCorePure64-10.1 (copy).iso"),
+	}
+	for _, path := range checklist {
+		if _, err = os.Stat(path); err != nil {
+			t.Fatalf("Get wrong cache directory, do not find file %s", path)
+		}
 	}
 }
